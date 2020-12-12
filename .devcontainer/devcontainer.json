@@ -12,7 +12,10 @@
 	"workspaceMount": "source=${localWorkspaceFolder}/../../../../,target=/workspace,type=bind,consistency=delegated",
 	"workspaceFolder": "/workspace/src/github.com/steffakasid/grd",
 	"settings": {
-		"terminal.integrated.shell.linux": "/bin/zsh"
+    "terminal.integrated.shell.linux": "/bin/zsh",
+    "go.useLanguageServer": true,
+    "go.gopath": "/workspace",
+    "go.goroot": "/usr/local/go"
 	},
 	"containerEnv": {
 		"GOPATH": "/workspace",
