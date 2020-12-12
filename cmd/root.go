@@ -17,7 +17,6 @@ limitations under the License.
 */
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -32,12 +31,15 @@ import (
 var (
 	cfgFile       string
 	gitLabAdapter *gitlab.Client
+	versionFlag   bool
 )
+
+var version = "on-dev"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "grd {gitlab_group_ID} [--flags]",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	Short: "grd renames the default branch of all projects in a group",
 	Long: `Grd will rename the default branch of all projects within a group.
 	Therefore all projects are looked up. If the default branch already matches,
@@ -56,8 +58,17 @@ var rootCmd = &cobra.Command{
   grd 1234 --unprotect    - Rename all default branches to 'main' of group 1234 and unprotect the old default`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
-		result, _ := json.Marshal(viper.AllSettings())
-		fmt.Println(string(result))
+
+		if versionFlag {
+			fmt.Println("grd version:", version)
+			os.Exit(0)
+		}
+
+		if len(args) != 1 {
+			fmt.Println("You must provide a GitLab GroupID!")
+			os.Exit(1)
+		}
+
 		gitLabAdapter, err = gitlab.NewClient(viper.GetString("token"), gitlab.WithBaseURL(viper.GetString("url")))
 		doWePanic(err)
 
@@ -97,6 +108,7 @@ func init() {
 	rootCmd.Flags().BoolP("delete", "d", viper.GetBool("delete"), "Delete the old default branch when done")
 	rootCmd.Flags().Bool("devs-can-merge", viper.GetBool("devs-can-merge"), "For new protected branch: Are developers allowed to merge?")
 	rootCmd.Flags().Bool("devs-can-push", viper.GetBool("devs-can-push"), "For new protected branch: Are developers allowed to push?")
+	rootCmd.Flags().BoolVar(&versionFlag, "version", false, "Print version information")
 
 	viper.BindPFlag("new-name", rootCmd.Flags().Lookup("new-name"))
 	viper.BindPFlag("token", rootCmd.Flags().Lookup("token"))
