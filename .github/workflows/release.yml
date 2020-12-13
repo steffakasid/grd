@@ -23,5 +23,5 @@ jobs:
         goversion: "https://dl.google.com/go/go1.15.6.linux-amd64.tar.gz"
         build_flags: -tags release
         ldflags: -X github.com/steffakasid/grd/cmd.version=${{ env.RELEASE_VERSION }}
-        binary_name: "dof"
+        binary_name: "grd"
         extra_files: LICENSE README.adoc
