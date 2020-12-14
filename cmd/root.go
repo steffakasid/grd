@@ -157,39 +157,9 @@ func renameDefault(proj *gitlab.Project) {
 		} else {
 			fmt.Printf("[%s] Current defaultBranch is %s\n", proj.Name, defaultBranchName)
 
-			if !branchAlreadyExists(viper.GetString("new-name"), allBranches) {
-				newBranch, _, err := gitLabAdapter.Branches.CreateBranch(proj.ID, &gitlab.CreateBranchOptions{
-					Branch: gitlab.String(viper.GetString("new-name")),
-					Ref:    gitlab.String(defaultBranchName),
-				})
-				doWePanic(err)
-				fmt.Printf("[%s] Created new branch%s\n", proj.Name, newBranch.Name)
-			}
+			createNewBranch(proj, allBranches, defaultBranchName)
 
-			_, _, err = gitLabAdapter.Projects.EditProject(proj.ID, &gitlab.EditProjectOptions{
-				DefaultBranch: gitlab.String(viper.GetString("new-name")),
-			})
-			doWePanic(err)
-			fmt.Printf("[%s] Set default branch to %s\n", proj.Name, viper.GetString("new-name"))
-
-			_, _, err = gitLabAdapter.Branches.ProtectBranch(proj.ID, viper.GetString("new-name"), &gitlab.ProtectBranchOptions{
-				DevelopersCanPush:  gitlab.Bool(viper.GetBool("devs-can-push")),
-				DevelopersCanMerge: gitlab.Bool(viper.GetBool("devs-can-merge")),
-			})
-			doWePanic(err)
-			fmt.Printf("[%s] Protected branch %s\n", proj.Name, viper.GetString("new-name"))
-
-			if viper.GetBool("unprotect") {
-				branch, _, err := gitLabAdapter.Branches.UnprotectBranch(proj.ID, *gitlab.String(defaultBranchName))
-				doWePanic(err)
-				fmt.Printf("[%s] Unprotected branch %s\n", proj.Name, branch.Name)
-			}
-
-			if viper.GetBool("delete") {
-				_, err := gitLabAdapter.Branches.DeleteBranch(proj.ID, *gitlab.String(defaultBranchName))
-				doWePanic(err)
-				fmt.Printf("[%s] Deleted branch %s\n", proj.Name, defaultBranchName)
-			}
+			cleanupOldBranch(proj, allBranches, defaultBranchName)
 		}
 	} else {
 		fmt.Printf("[%s] Doesn't contain any branches! Nothing to do.\n", proj.Name)
@@ -197,11 +167,57 @@ func renameDefault(proj *gitlab.Project) {
 	fmt.Println("----------------------------------------------------")
 }
 
-func branchAlreadyExists(branchName string, branches []*gitlab.Branch) bool {
+func branchAlreadyExists(branchName string, branches []*gitlab.Branch) (*gitlab.Branch, bool) {
 	for _, branch := range branches {
 		if branchName == branch.Name {
-			return true
+			return branch, true
 		}
 	}
-	return false
+	return nil, false
+}
+
+func createNewBranch(proj *gitlab.Project, allBranches []*gitlab.Branch, defaultBranchName string) {
+	var err error
+	_, newBranchExists := branchAlreadyExists(viper.GetString("new-name"), allBranches)
+	if !newBranchExists {
+		newBranch, _, err := gitLabAdapter.Branches.CreateBranch(proj.ID, &gitlab.CreateBranchOptions{
+			Branch: gitlab.String(viper.GetString("new-name")),
+			Ref:    gitlab.String(defaultBranchName),
+		})
+		doWePanic(err)
+		fmt.Printf("[%s] Created new branch%s\n", proj.Name, newBranch.Name)
+	}
+
+	_, _, err = gitLabAdapter.Projects.EditProject(proj.ID, &gitlab.EditProjectOptions{
+		DefaultBranch: gitlab.String(viper.GetString("new-name")),
+	})
+	doWePanic(err)
+	fmt.Printf("[%s] Set default branch to %s\n", proj.Name, viper.GetString("new-name"))
+
+	_, _, err = gitLabAdapter.Branches.ProtectBranch(proj.ID, viper.GetString("new-name"), &gitlab.ProtectBranchOptions{
+		DevelopersCanPush:  gitlab.Bool(viper.GetBool("devs-can-push")),
+		DevelopersCanMerge: gitlab.Bool(viper.GetBool("devs-can-merge")),
+	})
+	doWePanic(err)
+	fmt.Printf("[%s] Protected branch %s\n", proj.Name, viper.GetString("new-name"))
+}
+
+func cleanupOldBranch(proj *gitlab.Project, allBranches []*gitlab.Branch, defaultBranchName string) {
+	oldDefault, oldDefaultExists := branchAlreadyExists(defaultBranchName, allBranches)
+
+	if viper.GetBool("unprotect") && oldDefault.Protected {
+		branch, _, err := gitLabAdapter.Branches.UnprotectBranch(proj.ID, *gitlab.String(defaultBranchName))
+		doWePanic(err)
+		fmt.Printf("[%s] Unprotected branch %s\n", proj.Name, branch.Name)
+	}
+
+	if viper.GetBool("delete") && oldDefaultExists {
+		if oldDefault.Protected {
+			_, _, err := gitLabAdapter.Branches.UnprotectBranch(proj.ID, *gitlab.String(defaultBranchName))
+			doWePanic(err)
+		}
+		_, err := gitLabAdapter.Branches.DeleteBranch(proj.ID, *gitlab.String(defaultBranchName))
+		doWePanic(err)
+		fmt.Printf("[%s] Deleted branch %s\n", proj.Name, defaultBranchName)
+	}
 }
