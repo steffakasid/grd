@@ -42,20 +42,20 @@ var rootCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	Short: "grd renames the default branch of all projects in a group",
 	Long: `Grd will rename the default branch of all projects within a group.
-	Therefore all projects are looked up. If the default branch already matches,
-	the new-name (defaults to 'main') it does nothing. Otherwise it will create a
-	new branch based on the old default branch. Sets the new branch to default and
-	protects it. Afterwards the old default is unprotected. Optionally you can also
-  delete the old default.
-  
-  Each flag could also be set as env var prefixed with GRD_ e.g. to set the token you 
-  can do 'export GRD_TOKEN=<your token>'.
+Therefore all projects are looked up. If the default branch already matches,
+the new-name (defaults to 'main') it does nothing. Otherwise it will create a
+new branch based on the old default branch. Sets the new branch to default and
+protects it. Afterwards the old default is unprotected. Optionally you can also
+delete the old default.
 
-	Examples:
-	grd 1234    			      - Rename all default branches to 'main' of group 1234 and keep the old default
-	grd 1234 --new-name 1st - Rename all default branches to '1st' of group 1234 and keep the old default
-  grd 1234 --delete		    - Rename all default branches to 'main' of group 1234 and delete the old default
-  grd 1234 --unprotect    - Rename all default branches to 'main' of group 1234 and unprotect the old default`,
+Each flag could also be set as env var prefixed with GRD_ e.g. to set the token you 
+can do 'export GRD_TOKEN=<your token>'.
+
+Examples:
+grd 1234    			      - Rename all default branches to 'main' of group 1234 and keep the old default
+grd 1234 --new-name 1st - Rename all default branches to '1st' of group 1234 and keep the old default
+grd 1234 --delete		    - Rename all default branches to 'main' of group 1234 and delete the old default
+grd 1234 --unprotect    - Rename all default branches to 'main' of group 1234 and unprotect the old default`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
 

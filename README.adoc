@@ -1,3 +1,38 @@
 = GRD (Gitlab rename default branch)
 
-This is a tool to rename all default branches of all projects within a group.
+This is a tool to rename all default branches of all projects within a group in GitLab. Why would I do that? During the Black Lives Matter movement in 2020 many of us started to rename their master branches to main or something similar to be respectful to people hurt by the term. This came up as terms like 'master & slave' are somehow derived from slavery and the term is offensive to some people. I think that everything should be banned from language even if it was used for a long time and even if there might be no bad intent. Actually I just thought about how it could be made easier especially if you have a large number of projects (as we've in our Project at DB Systel). So I just decided to create a little tool which could do it for you.
+
+Further reading:
+
+* https://github.com/github/renaming
+* https://sfconservancy.org/news/2020/jun/23/gitbranchname/
+
+== Usage
+
+Grd will rename the default branch of all projects within a group. Therefore all projects are looked up. If the default branch already matches, the new-name (defaults to 'main') it does nothing. Otherwise it will create a new branch based on the old default branch. Sets the new branch to default and protects it. Afterwards the old default is unprotected. Optionally you can also delete the old default.
+
+=== Usage:
+  grd {gitlab_group_ID} [--flags] [flags]
+
+=== Flags:
+      --config string     config file (default is $HOME/.grd.yaml)
+  -d, --delete            Delete the old default branch when done
+      --devs-can-merge    For new protected branch: Are developers allowed to merge?
+      --devs-can-push     For new protected branch: Are developers allowed to push?
+  -h, --help              help for grd
+  -n, --new-name string   Set the newname to rename the default to (default "main")
+  -t, --token string      GitLab Token (API access) to be used
+  -p, --unprotect         Unprotect the old default branch when done
+  -u, --url string        GitLab API URL (default "https://gitlab.com")
+      --version           Print version informatio
+
+Each flag could also be set as env var prefixed with GRD_ e.g. to set the token you can do 'export GRD_TOKEN=<your token>'.
+
+=== Examples:
+[source,sh]
+----
+grd 1234                - Rename all default branches to 'main' of group 1234 and keep the old default
+grd 1234 --new-name 1st - Rename all default branches to '1st' of group 1234 and keep the old default
+grd 1234 --delete       - Rename all default branches to 'main' of group 1234 and delete the old default
+grd 1234 --unprotect    - Rename all default branches to 'main' of group 1234 and unprotect the old default
+----
